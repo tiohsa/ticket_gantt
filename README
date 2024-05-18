@@ -1,0 +1,11 @@
+# My dhtmlx Gantt and Scheduler Plugin
+
+This project is an open-source plugin that integrates dhtmlx Gantt and Scheduler.
+
+## License
+
+This project is licensed under the GNU General Public License v2.0 - see the [LICENSE](LICENSE) file for details.
+
+## dhtmlx Gantt and Scheduler
+
+Please note that while this project itself is open-source, it uses dhtmlx Gantt and Scheduler, which are also licensed under the GNU General Public License v2.0. See [dhtmlx.com](https://dhtmlx.com) for more information on dhtmlx licensing.
