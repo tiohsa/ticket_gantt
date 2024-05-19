@@ -32,6 +32,7 @@ class GanttHelper {
     this.gantt.config.duration_step = 1;
     // 日付を丸める設定
     this.gantt.config.round_dnd_dates = true;
+    this.gantt.config.row_height = 24;
     this.createLightbox();
     this.setupLabel();
     this.attachOnTaskCreated();
@@ -156,7 +157,7 @@ class GanttHelper {
   getPriorities() {
     // 優先度フィールドのオプションを設定
     const successCallback = (data) => {
-      const options = data.map((priority) => {
+      const options = data.priorities.map((priority) => {
         return { key: priority.id, label: priority.name };
       });
       this.gantt.config.lightbox.sections.forEach((section) => {
@@ -184,7 +185,7 @@ class GanttHelper {
   getStatus() {
     // Statusフィールドのオプションを設定
     const successCallback = (data) => {
-      const options = data.issue_statuses.map((status) => {
+      const options = data.statuses.map((status) => {
         return { key: status.id, label: status.name };
       });
       this.gantt.config.lightbox.sections.forEach((section) => {

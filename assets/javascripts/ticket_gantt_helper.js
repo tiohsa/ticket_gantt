@@ -41,8 +41,7 @@ class TicketGanttHelper {
 
   // トラッカー情報を取得する
   getTrackers(successCallback, failureCallback) {
-    const url = `/trackers.json`;
-    fetch(url, {
+    fetch(`/projects/${projectId}/ticket_gantts/trackers`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -55,8 +54,7 @@ class TicketGanttHelper {
 
   // プライオリティ情報を取得する
   getPriorities(successCallback, failureCallback) {
-    const url = `/priorities`;
-    fetch(url, {
+    fetch(`/projects/${projectId}/ticket_gantts/priorities`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -69,8 +67,7 @@ class TicketGanttHelper {
 
   // ステータス情報を取得する
   getStatus(successCallback, failureCallback) {
-    const url = `/issue_statuses.json`;
-    fetch(url, {
+    fetch(`/projects/${projectId}/ticket_gantts/statuses`, {
       method: "GET",
       headers: {
         Accept: "application/json",

@@ -1,6 +1,9 @@
 require 'date'
+require 'redmine'
+require_dependency 'projects_helper'
 
 class TicketGanttsController < ApplicationController
+  include ProjectsHelper
   unloadable # リクエストごとにクラスをアンロードするためのマーク
 
   before_action :find_project, :authorize
@@ -130,6 +133,21 @@ class TicketGanttsController < ApplicationController
     render json: { message: 'Relation not found' }, status: :not_found
   end
 
+  def statuses
+    # プロジェクトのステータス一覧を取得
+    @statuses = IssueStatus.all
+    render json: { statuses: @statuses }
+  end
+
+  def trackers
+    @trackers = Tracker.all
+    render json: { trackers: @trackers }
+  end
+
+  def priorities
+    @priorities = IssuePriority.where("active = true")
+    render json: { priorities: @priorities }
+  end
   ##############################################
   # private
   ##############################################

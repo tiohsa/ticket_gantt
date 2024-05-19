@@ -8,6 +8,9 @@ Rails.application.routes.draw do
       collection do
         post :add_ticket
         post :add_relation
+        get :statuses
+        get :trackers
+        get :priorities
       end
       member do
         put :update_ticket

@@ -8,7 +8,7 @@
 months from
 <input type="month" id="month" style="text-align: center; cursor: pointer;">
 <div class="resizer"></div>
-<div id="gantt_here" style="width:100%; height:400px;"></div>
+<div id="gantt_here" class="content" style="width:100%; height: 700px;"></div>
 <style>
   .resizer {
       width: 1px;
@@ -21,7 +21,6 @@ months from
       cursor: ew-resize;
   }
 </style>
-<div id="gantt_here" style='width:100%; height:600px;'></div>
 <script>
   var projectId = "<%= @project.id %>";
   var org_grid_width = 0;
