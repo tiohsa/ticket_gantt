@@ -7,11 +7,12 @@ class TicketSchedulersController < ApplicationController
   before_action :find_ticket, only: [:update_dates]
 
   def index
+      default_statuses = statuses.where.not(name: ['Closed', 'Resolved']).pluck(:id)
       month = params[:month]
       month = month ? Date.parse(params[:month]) : Date.today
       start_date = month.beginning_of_month - 7
       end_date = month.end_of_month + 7
-      @issues  = @project.issues.where("start_date >= ? AND start_date <= ?", start_date, end_date)
+      @issues  = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)" , start_date, end_date, default_statuses)
       respond_to do |format|
         format.html
         format.json { render json: @issues.map { |ticket| to_json(ticket) } }

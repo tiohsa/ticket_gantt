@@ -2,13 +2,20 @@
 <%= stylesheet_link_tag 'dhtmlxgantt.css', plugin: :ticket_gantt %>
 <%= javascript_include_tag 'ticket_gantt_helper.js', plugin: :ticket_gantt %>
 <%= javascript_include_tag 'gantt_helper.js', plugin: :ticket_gantt %>
-<button id="openAllBtn" style="cursor: pointer;">Open All</button>
-<button id="closeAllBtn" style="cursor: pointer;">Close All</button>
-<input type="number" id="monthRange" min="1" max="12" style="width: 48px; text-align: center;">
-months from
-<input type="month" id="month" style="text-align: center; cursor: pointer;">
-<label for="status_filter">status not</label>
-<%= select_tag 'status_ids[]', options_from_collection_for_select(IssueStatus.all, 'id', 'name', params[:status_ids]), multiple: true %>
+<div style="display: flex; flex-wrap: wrap; align-items: center;">
+  <button id="openAllBtn" style="cursor: pointer;">Open All</button>
+  <button id="closeAllBtn" style="cursor: pointer;">Close All</button>
+  <input type="number" id="monthRange" min="1" max="12" style="width: 48px; text-align: center;">
+  months from
+  <input type="month" id="month" style="text-align: center; cursor: pointer;">
+  status not
+  <% IssueStatus.all.each do |status| %>
+    <div style="margin-right: 10px;">
+      <%= check_box_tag 'status_ids[]', status.id, (params[:status_ids] || IssueStatus.where(name: ['Closed', 'Resolved']).pluck(:id)).include?(status.id), id: "status_ids_#{status.id}", class: 'status-checkbox' %>
+      <%= label_tag "status_ids_#{status.id}", status.name %>
+    </div>
+  <% end %>
+</div>
 <div class="resizer"></div>
 <div id="gantt_here" class="content" style="width:100%; height: 700px;"></div>
 <style>
@@ -41,7 +48,7 @@ months from
   var projectId = "<%= @project.id %>";
   var org_grid_width = 0;
   document.addEventListener('DOMContentLoaded', function() {
-    const ganttHelper = new GanttHelper(projectId, "gantt_here", ".gantt_layout_content", ".resizer", "month", "monthRange", "status_ids_", "openAllBtn", "closeAllBtn");
+    const ganttHelper = new GanttHelper(projectId, "gantt_here", ".gantt_layout_content", ".resizer", "month", "monthRange", "status-checkbox", "openAllBtn", "closeAllBtn");
     ganttHelper.setup();
   });
 </script>

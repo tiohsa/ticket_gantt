@@ -20,6 +20,10 @@ class TicketGanttHelper {
   }
 
   createStatusParameter(selectedStatusIds) {
+    console.log(selectedStatusIds);
+    if (!selectedStatusIds) {
+      return "";
+    }
     var statusParamString = "";
     for (var i = 0; i < selectedStatusIds.length; i++) {
       statusParamString += "status_ids[]=" + selectedStatusIds[i];

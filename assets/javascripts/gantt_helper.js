@@ -18,7 +18,7 @@ class GanttHelper {
     this.resizer = document.querySelector(resizerElement);
     this.month = document.getElementById(motnElement);
     this.monthRange = document.getElementById(motnRangeElement);
-    this.statusIds = document.getElementById(statusIdsElement);
+    this.statusIds = document.getElementsByClassName(statusIdsElement);
     this.openAllBtnElement = document.getElementById(openAllBtn);
     this.closeAllBtnElement = document.getElementById(closeAllBtn);
   }
@@ -230,7 +230,13 @@ class GanttHelper {
     };
     const selectedMonth = this.month.value;
     const selectedMonthRange = this.monthRange.value;
-    const selectedStatusIds = this.statusIds.value;
+    const statusCheckboxes = document.querySelectorAll(
+      'input[name="status_ids[]"]:checked',
+    ); // 選択されたチェックボックスを取得
+    const selectedStatusIds = Array.from(statusCheckboxes).map(
+      (checkbox) => checkbox.value,
+    ); // チェックボックスの値を配列として取得
+
     this.ticketGanttHelper.getTasks(
       this.projectId,
       selectedMonth,
@@ -412,9 +418,11 @@ class GanttHelper {
 
   attachOnChangeStatus() {
     const helper = this;
-    this.statusIds.addEventListener("change", (e) => {
-      helper.loadTasks();
-    });
+    for (let i = 0; i < this.statusIds.length; i++) {
+      this.statusIds[i].addEventListener("change", function () {
+        helper.loadTasks(); // チェックボックスの状態が変わったときに呼び出される
+      });
+    }
   }
 
   // テキストの長さに基づいてグリッド幅を設定する関数

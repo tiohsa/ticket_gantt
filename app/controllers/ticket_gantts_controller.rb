@@ -10,27 +10,24 @@ class TicketGanttsController < ApplicationController
   before_action :find_ticket, only: [:update_dates]
 
   def index
-      statuses = IssueStatus.all
+    selected_month_range = params[:month_range].to_i || 3
+    start_date = params[:month] ? Date.strptime(params[:month], '%Y-%m') : Date.today.beginning_of_month
+    end_date = start_date >> selected_month_range
 
-      selected_month_range = params[:month_range].to_i || 3
-      start_date = params[:month] ? Date.strptime(params[:month], '%Y-%m') : Date.today.beginning_of_month
-      end_date = start_date >> selected_month_range
-      selected_stautes  = statuses.where.not(id: params[:status_ids]).pluck(:id)
-      if selected_stautes
-        issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, selected_stautes).order(:start_date)
-      else
-        issues = @project.issues.where("start_date >= ? AND start_date <= ?", start_date, end_date).order(:start_date)
-      end
-      relations = IssueRelation.all
+    statuses = IssueStatus.all
+    default_statuses = statuses.where.not(name: ['Closed', 'Resolved']).pluck(:id)
+    selected_stautes  = params[:status_ids] || default_statuses
+    issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, selected_stautes).order(:start_date)
+    relations = IssueRelation.all
 
-      respond_to do |format|
-          format.html
-          format.json { render json:{
-             data: format_issues(issues),
-             links: format_relations(relations)
-          }
+    respond_to do |format|
+        format.html
+        format.json { render json:{
+            data: format_issues(issues),
+            links: format_relations(relations)
         }
-      end
+      }
+    end
   end
 
   def add_ticket
