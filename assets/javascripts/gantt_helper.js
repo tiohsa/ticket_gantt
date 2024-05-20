@@ -6,6 +6,7 @@ class GanttHelper {
     resizerElement,
     motnElement,
     motnRangeElement,
+    statusIdsElement,
     openAllBtn,
     closeAllBtn,
   ) {
@@ -17,6 +18,7 @@ class GanttHelper {
     this.resizer = document.querySelector(resizerElement);
     this.month = document.getElementById(motnElement);
     this.monthRange = document.getElementById(motnRangeElement);
+    this.statusIds = document.getElementById(statusIdsElement);
     this.openAllBtnElement = document.getElementById(openAllBtn);
     this.closeAllBtnElement = document.getElementById(closeAllBtn);
   }
@@ -27,6 +29,7 @@ class GanttHelper {
     this.attachOnChangeMonthRangeChange();
     this.attachOnOpenAllTasks();
     this.attachOnCloseAllTasks();
+    this.attachOnChangeStatus();
 
     // タスクのリサイズのステップを1日単位に設定
     this.gantt.config.duration_step = 1;
@@ -35,6 +38,7 @@ class GanttHelper {
     this.gantt.config.row_height = 24;
     this.createLightbox();
     this.setupLabel();
+    this.setUpPriorityColors();
     this.attachOnTaskCreated();
     this.attachOnLightboxSave();
     this.getTrackers();
@@ -71,21 +75,21 @@ class GanttHelper {
       {
         name: "tracker",
         height: 30,
-        map_to: "tracker",
+        map_to: "tracker_id",
         type: "select",
         options: [],
       },
       {
         name: "priority",
         height: 30,
-        map_to: "priority",
+        map_to: "priority_id",
         type: "select",
         options: [],
       },
       {
         name: "status",
         height: 30,
-        map_to: "status",
+        map_to: "status_id",
         type: "select",
         options: [],
       },
@@ -109,14 +113,28 @@ class GanttHelper {
     this.gantt.locale.labels.section_progress = "Progress";
   }
 
+  setUpPriorityColors() {
+    this.gantt.templates.task_class = function (start, end, task) {
+      // console.log(task);
+      if (task.priority == "High") {
+        return "high-priority";
+      } else if (task.priority == "Urgent") {
+        return "urgent-priority";
+      } else if (task.priority == "Immediate") {
+        return "immediate-priority";
+      }
+      return "";
+    };
+  }
+
   attachOnTaskCreated() {
     // 新しいタスクを追加するためのイベントリスナー
     this.gantt.attachEvent("onTaskCreated", (task) => {
       task.text = "";
       task.description = "";
-      task.tracker = 1;
-      task.priority = 5;
-      task.status = 1;
+      task.tracker_id = 1;
+      task.priority_id = 5;
+      task.status_id = 1;
       task.progress = 0;
       return true;
     });
@@ -125,11 +143,14 @@ class GanttHelper {
   attachOnLightboxSave() {
     // タイトルを編集できるようにするためのイベントリスナー
     this.gantt.attachEvent("onLightboxSave", (id, item, isNew) => {
+      // console.log("item", item);
+      // console.log("this.gantt.getTask(id)", this.gantt.getTask(id));
+
       this.gantt.getTask(id).text = item.text;
       this.gantt.getTask(id).description = item.description; // descriptionプロパティを保存
-      this.gantt.getTask(id).tracker = item.tracker;
-      this.gantt.getTask(id).priority = item.priority;
-      this.gantt.getTask(id).status = item.status;
+      this.gantt.getTask(id).tracker_id = item.tracker_id;
+      this.gantt.getTask(id).priority_id = item.priority_id;
+      this.gantt.getTask(id).status_id = item.status_id;
       this.gantt.getTask(id).progress = item.progress;
       return true;
     });
@@ -209,10 +230,12 @@ class GanttHelper {
     };
     const selectedMonth = this.month.value;
     const selectedMonthRange = this.monthRange.value;
+    const selectedStatusIds = this.statusIds.value;
     this.ticketGanttHelper.getTasks(
       this.projectId,
       selectedMonth,
       selectedMonthRange,
+      selectedStatusIds,
       successCallback,
       this.failureCallback,
     );
@@ -240,7 +263,9 @@ class GanttHelper {
 
   attachOnAfterTaskUpdate() {
     this.gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
-      const successCallback = (data) => console.log(data);
+      const successCallback = (data) => {
+        /* console.log(data); */
+      };
       this.ticketGanttHelper.updateTicket(
         this.projectId,
         id,
@@ -253,7 +278,9 @@ class GanttHelper {
 
   attachOnAfterTaskDelete() {
     this.gantt.attachEvent("onAfterTaskDelete", (id, task) => {
-      const successCallback = (data) => console.log(data);
+      const successCallback = (data) => {
+        /* console.log(data); */
+      };
       this.ticketGanttHelper.deleteTicket(
         this.projectId,
         id,
@@ -280,7 +307,7 @@ class GanttHelper {
   attachOnAfterLinkUpdate() {
     this.gantt.attachEvent("onAfterLinkUpdate", (id, link) => {
       const successCallback = (data) => {
-        console.log(data);
+        // console.log(data);
       };
       this.ticketGanttHelper.updateTicketRelation(
         this.projectId,
@@ -294,7 +321,7 @@ class GanttHelper {
   attachOnAfterLinkDelete() {
     this.gantt.attachEvent("onAfterLinkDelete", (id, link) => {
       const successCallback = (response) => {
-        console.log(response);
+        // console.log(response);
       };
       this.ticketGanttHelper.deleteTicketRelation(
         this.projectId,
@@ -380,6 +407,13 @@ class GanttHelper {
         task.$open = false;
       });
       helper.gantt.render();
+    });
+  }
+
+  attachOnChangeStatus() {
+    const helper = this;
+    this.statusIds.addEventListener("change", (e) => {
+      helper.loadTasks();
     });
   }
 

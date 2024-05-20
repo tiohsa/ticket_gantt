@@ -7,6 +7,8 @@
 <input type="number" id="monthRange" min="1" max="12" style="width: 48px; text-align: center;">
 months from
 <input type="month" id="month" style="text-align: center; cursor: pointer;">
+<label for="status_filter">status not</label>
+<%= select_tag 'status_ids[]', options_from_collection_for_select(IssueStatus.all, 'id', 'name', params[:status_ids]), multiple: true %>
 <div class="resizer"></div>
 <div id="gantt_here" class="content" style="width:100%; height: 700px;"></div>
 <style>
@@ -20,12 +22,26 @@ months from
       border: 1px solid #eee;
       cursor: ew-resize;
   }
+  .high-priority .gantt_task_content {
+      background-color: red;
+      color: white;
+  }
+
+  .urgent-priority .gantt_task_content {
+      background-color: orange;
+      color: white;
+  }
+
+  .immediate-priority .gantt_task_content {
+      background-color: green;
+      color: white;
+  }
 </style>
 <script>
   var projectId = "<%= @project.id %>";
   var org_grid_width = 0;
   document.addEventListener('DOMContentLoaded', function() {
-    const ganttHelper = new GanttHelper(projectId, "gantt_here", ".gantt_layout_content", ".resizer", "month", "monthRange", "openAllBtn", "closeAllBtn");
+    const ganttHelper = new GanttHelper(projectId, "gantt_here", ".gantt_layout_content", ".resizer", "month", "monthRange", "status_ids_", "openAllBtn", "closeAllBtn");
     ganttHelper.setup();
   });
 </script>

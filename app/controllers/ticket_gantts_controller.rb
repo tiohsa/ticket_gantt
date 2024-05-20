@@ -10,17 +10,24 @@ class TicketGanttsController < ApplicationController
   before_action :find_ticket, only: [:update_dates]
 
   def index
+      statuses = IssueStatus.all
+
       selected_month_range = params[:month_range].to_i || 3
       start_date = params[:month] ? Date.strptime(params[:month], '%Y-%m') : Date.today.beginning_of_month
       end_date = start_date >> selected_month_range
-      @issues = @project.issues.where("start_date >= ? AND start_date <= ?", start_date, end_date).order(:start_date)
-      @relations = IssueRelation.all
+      selected_stautes  = statuses.where.not(id: params[:status_ids]).pluck(:id)
+      if selected_stautes
+        issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, selected_stautes).order(:start_date)
+      else
+        issues = @project.issues.where("start_date >= ? AND start_date <= ?", start_date, end_date).order(:start_date)
+      end
+      relations = IssueRelation.all
 
       respond_to do |format|
           format.html
           format.json { render json:{
-             data: format_issues(@issues),
-             links: format_relations(@relations)
+             data: format_issues(issues),
+             links: format_relations(relations)
           }
         }
       end
@@ -98,12 +105,15 @@ class TicketGanttsController < ApplicationController
   end
 
   def add_relation
+    target = Issue.find(relation_params[:target])
+    source = Issue.find(relation_params[:source])
+    source.due_date = source.start_date + 1 unless source.due_date?
     relation = IssueRelation.new(
         issue_from_id: relation_params[:source],
         issue_to_id: relation_params[:target],
-        relation_type: "relates"#map_gantt_type_to_redmine(relation_params[:type])
+        relation_type: map_gantt_type_to_redmine(relation_params[:type])
     )
-    if relation.save
+    if source.save && relation.save
         render json: { success: true, relation: format_relations([relation]).first }
     else
         render json: { success: false, errors: relation.errors.full_messages }, status: :unprocessable_entity
@@ -153,14 +163,6 @@ class TicketGanttsController < ApplicationController
   ##############################################
   private
 
-  def map_gantt_type_to_redmine(type)
-    case type
-    when "0" then "relates"
-    when "1" then "follows"
-    # 他のタイプに応じて追加
-    end
-  end
-
   def format_issues(issues)
     issues.map do |ticket|
       {
@@ -170,7 +172,10 @@ class TicketGanttsController < ApplicationController
          start_date: ticket.start_date.strftime("%d-%m-%Y"),
          duration: ticket.start_date && ticket.due_date ? (ticket.due_date - ticket.start_date).to_i + 1 : 1,
          progress: ticket.done_ratio / 100.0,
-         parent: ticket.parent_id || 0
+         parent: ticket.parent_id || 0,
+         priority_id: ticket.priority_id,
+         tracker_id: ticket.tracker_id,
+         status_id: ticket.status_id
       }
     end
   end
@@ -181,21 +186,44 @@ class TicketGanttsController < ApplicationController
         id: relation.id,
         source: relation.issue_from_id,
         target: relation.issue_to_id,
-        type: map_relation_type(relation.relation_type)
+        type: map_redmine_to_gantt(relation.relation_type)
       }
     end
   end
 
-  def map_relation_type(relation_type)
+  def map_gantt_type_to_redmine(relation_type)
+    'relates'
+    # case relation_type
+    #   when 0
+    #     'precedes'
+    #   when 1
+    #     'relates'
+    #   when 2
+    #     'relates'
+    #   when 3
+    #     'blocks'
+    #   else
+    #     'relates'
+    # end
+  end
+
+  def map_redmine_to_gantt(relation_type)
+    0
     # ここは適切なDHTMLX Ganttリンクタイプにマッピングする
-    case relation_type
-    when "relates" then "0"
-    when "follows" then "1"
-    when "duplicates" then "0"
-    when "blocks" then "0"
-    when "precedes" then "0"
-    else "0"
-    end
+   #case relation_type
+   #   when 'precedes'
+   #     0 # Finish to Start (FS)
+   #   when 'follows'
+   #     0 # Finish to Start (FS) - 逆関係なので調整が必要
+   #   when 'blocks'
+   #     3 # Start to Finish (SF)
+   #   when 'blocked_by'
+   #     3 # Start to Finish (SF) - 逆関係なので調整が必要
+   #   when 'relates'
+   #     1 # Start to Start (SS) または 2 # Finish to Finish (FF)
+   #   else
+   #     1 # デフォルトはStart to Start (SS)とする
+   #end
   end
 
   def find_project

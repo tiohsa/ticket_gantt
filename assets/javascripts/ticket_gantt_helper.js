@@ -19,15 +19,30 @@ class TicketGanttHelper {
     }
   }
 
+  createStatusParameter(selectedStatusIds) {
+    var statusParamString = "";
+    for (var i = 0; i < selectedStatusIds.length; i++) {
+      statusParamString += "status_ids[]=" + selectedStatusIds[i];
+      if (i < selectedStatusIds.length - 1) {
+        statusParamString += "&";
+      }
+    }
+    if (statusParamString) {
+      statusParamString = "&" + statusParamString;
+    }
+    return statusParamString;
+  }
+
   // 指定されたプロジェクトIDのタスクを取得する
   getTasks(
     projectId,
     selectedMonth,
     selectedRangeMonth,
+    selectedStatusIds,
     successCallback,
     failureCallback,
   ) {
-    const url = `/projects/${projectId}/ticket_gantts?month=${selectedMonth}&month_range=${selectedRangeMonth}`;
+    const url = `/projects/${projectId}/ticket_gantts?month=${selectedMonth}&month_range=${selectedRangeMonth}${this.createStatusParameter(selectedStatusIds)}`;
     fetch(url, {
       method: "GET",
       headers: {
@@ -93,9 +108,9 @@ class TicketGanttHelper {
         issue: {
           subject: task.text,
           description: task.description,
-          tracker_id: task.tracker,
-          priority_id: task.priority,
-          status_id: task.status,
+          tracker_id: task.tracker_id,
+          priority_id: task.priority_id,
+          status_id: task.status_id,
           done_ratio: this.roundToNearestTen(task.progress * 100),
           start_date: task.start_date.toLocaleDateString(),
           due_date: task.end_date.toLocaleDateString(),
@@ -124,9 +139,9 @@ class TicketGanttHelper {
           id: task.id,
           subject: task.text,
           description: task.description,
-          tracker_id: task.tracker,
-          priority_id: task.priority,
-          status_id: task.status,
+          tracker_id: task.tracker_id,
+          priority_id: task.priority_id,
+          status_id: task.status_id,
           done_ratio: this.roundToNearestTen(task.progress * 100),
           start_date: task.start_date.toLocaleDateString(),
           due_date: task.end_date.toLocaleDateString(),
@@ -158,6 +173,7 @@ class TicketGanttHelper {
 
   // チケットの関係を追加する
   addTicketRelation(projectId, link, successCallback, failureCallback) {
+    console.log(link);
     fetch(`/projects/${projectId}/ticket_gantts/add_relation`, {
       method: "POST",
       headers: {
