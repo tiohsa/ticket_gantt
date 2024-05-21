@@ -4,8 +4,8 @@ class GanttHelper {
     ganttElementId,
     ganttLayoutContentElement,
     resizerElement,
-    motnElement,
-    motnRangeElement,
+    monthElement,
+    monthRangeElement,
     statusIdsElement,
     openAllBtn,
     closeAllBtn,
@@ -16,14 +16,14 @@ class GanttHelper {
     this.ticketGanttHelper = new TicketGanttHelper();
     this.ganttGrid = document.querySelector(ganttLayoutContentElement);
     this.resizer = document.querySelector(resizerElement);
-    this.month = document.getElementById(motnElement);
-    this.monthRange = document.getElementById(motnRangeElement);
+    this.month = document.getElementById(monthElement);
+    this.monthRange = document.getElementById(monthRangeElement);
     this.statusIds = document.getElementsByClassName(statusIdsElement);
     this.openAllBtnElement = document.getElementById(openAllBtn);
     this.closeAllBtnElement = document.getElementById(closeAllBtn);
   }
 
-  setup() {
+  setUp() {
     this.initMonthFilter();
     this.attachOnChangeMonthChange();
     this.attachOnChangeMonthRangeChange();
@@ -31,19 +31,24 @@ class GanttHelper {
     this.attachOnCloseAllTasks();
     this.attachOnChangeStatus();
 
-    // タスクのリサイズのステップを1日単位に設定
     this.gantt.config.duration_step = 1;
-    // 日付を丸める設定
     this.gantt.config.round_dnd_dates = true;
     this.gantt.config.row_height = 24;
+
+    // マウスドラッグによるスクロールを有効にする
+    this.gantt.config.touch = "force";
+    // マウスホイールによる水平スクロールを有効にする
+    this.gantt.config.scroll_on_click = true;
+    this.gantt.config.autoscroll = true;
+
     this.createLightbox();
-    this.setupLabel();
+    this.setUpLabel();
     this.setUpPriorityColors();
     this.attachOnTaskCreated();
     this.attachOnLightboxSave();
     this.getTrackers();
     this.getPriorities();
-    this.setupProgressOptions();
+    this.setUpProgressOptions();
     this.getStatus();
     this.loadTasks();
     this.attachOnAfterTaskAdd();
@@ -54,10 +59,10 @@ class GanttHelper {
     this.attachOnAfterLinkDelete();
     this.attachOnGanttRender();
     this.attachResizer();
+    // this.setUpMouseScroll();
   }
 
   createLightbox() {
-    // カスタムライトボックスの設定
     this.gantt.config.lightbox.sections = [
       {
         name: "subject",
@@ -104,8 +109,7 @@ class GanttHelper {
     ];
   }
 
-  setupLabel() {
-    // ラベルの設定
+  setUpLabel() {
     this.gantt.locale.labels.section_subject = "Subject";
     this.gantt.locale.labels.section_tracker = "Tracker";
     this.gantt.locale.labels.section_priority = "Priority";
@@ -115,43 +119,84 @@ class GanttHelper {
 
   setUpPriorityColors() {
     this.gantt.templates.task_class = function (start, end, task) {
-      // console.log(task);
-      if (task.priority == "High") {
+      if (task.priority === "High") {
         return "high-priority";
-      } else if (task.priority == "Urgent") {
+      } else if (task.priority === "Urgent") {
         return "urgent-priority";
-      } else if (task.priority == "Immediate") {
+      } else if (task.priority === "Immediate") {
         return "immediate-priority";
       }
       return "";
     };
   }
 
+  setUpMouseScroll() {
+    let isScrolling = false;
+
+    // マウスホイールでスクロールするための設定
+    this.gantt.attachEvent("onGanttScroll", (left, top) => {
+      if (!isScrolling) {
+        isScrolling = true;
+        setTimeout(() => {
+          this.gantt.scrollTo(left, top);
+          isScrolling = false;
+        }, 0);
+      }
+    });
+
+    // カスタムドラッグスクロールイベント
+    this.gantt.attachEvent("onMouseDown", (event) => {
+      const mouseDownX = event.clientX;
+      const mouseDownY = event.clientY;
+      const initialScrollLeft = this.gantt.scrollLeft;
+      const initialScrollTop = this.gantt.scrollTop;
+
+      const onMouseMove = (e) => {
+        const diffX = mouseDownX - e.clientX;
+        const diffY = mouseDownY - e.clientY;
+        this.gantt.scrollTo(
+          initialScrollLeft + diffX,
+          initialScrollTop + diffY,
+        );
+      };
+
+      const onMouseUp = () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    });
+  }
+
   attachOnTaskCreated() {
-    // 新しいタスクを追加するためのイベントリスナー
     this.gantt.attachEvent("onTaskCreated", (task) => {
       task.text = "";
       task.description = "";
-      task.tracker_id = 1;
-      task.priority_id = 5;
-      task.status_id = 1;
+      task.tracker_id = 4; //タスク
+      task.priority_id = 2; //通常
+      task.status_id = 1; //新規
       task.progress = 0;
+      const today = new Date();
+      task.start_date = today;
+      task.end_date = this.gantt.calculateEndDate({
+        start_date: today,
+        duration: 1,
+      });
       return true;
     });
   }
 
   attachOnLightboxSave() {
-    // タイトルを編集できるようにするためのイベントリスナー
-    this.gantt.attachEvent("onLightboxSave", (id, item, isNew) => {
-      // console.log("item", item);
-      // console.log("this.gantt.getTask(id)", this.gantt.getTask(id));
-
-      this.gantt.getTask(id).text = item.text;
-      this.gantt.getTask(id).description = item.description; // descriptionプロパティを保存
-      this.gantt.getTask(id).tracker_id = item.tracker_id;
-      this.gantt.getTask(id).priority_id = item.priority_id;
-      this.gantt.getTask(id).status_id = item.status_id;
-      this.gantt.getTask(id).progress = item.progress;
+    this.gantt.attachEvent("onLightboxSave", (id, item) => {
+      const task = this.gantt.getTask(id);
+      task.text = item.text;
+      task.description = item.description;
+      task.tracker_id = item.tracker_id;
+      task.priority_id = item.priority_id;
+      task.status_id = item.status_id;
+      task.progress = item.progress;
       return true;
     });
   }
@@ -161,7 +206,6 @@ class GanttHelper {
   };
 
   getTrackers() {
-    // トラッカーフィールドのオプションを設定
     const successCallback = (data) => {
       const options = data.trackers.map((tracker) => {
         return { key: tracker.id, label: tracker.name };
@@ -176,7 +220,6 @@ class GanttHelper {
   }
 
   getPriorities() {
-    // 優先度フィールドのオプションを設定
     const successCallback = (data) => {
       const options = data.priorities.map((priority) => {
         return { key: priority.id, label: priority.name };
@@ -190,12 +233,11 @@ class GanttHelper {
     this.ticketGanttHelper.getPriorities(successCallback, this.failureCallback);
   }
 
-  setupProgressOptions() {
-    // Progressフィールドのオプションを設定
-    const progressOptions = [];
-    for (let i = 0; i <= 10; i++) {
-      progressOptions.push({ key: i / 10, label: i * 10 + "%" });
-    }
+  setUpProgressOptions() {
+    const progressOptions = Array.from({ length: 11 }, (_, i) => ({
+      key: i / 10,
+      label: i * 10 + "%",
+    }));
     this.gantt.config.lightbox.sections.forEach((section) => {
       if (section.name === "progress") {
         section.options = progressOptions;
@@ -204,7 +246,6 @@ class GanttHelper {
   }
 
   getStatus() {
-    // Statusフィールドのオプションを設定
     const successCallback = (data) => {
       const options = data.statuses.map((status) => {
         return { key: status.id, label: status.name };
@@ -219,23 +260,22 @@ class GanttHelper {
   }
 
   loadTasks() {
-    // Taskの取得
     const successCallback = (data) => {
-      gantt.clearAll();
+      this.gantt.clearAll();
       this.gantt.parse(data);
-      // グリッド幅を計算
-      // Ganttの初期化前に設定を適用
       this.calculateGridWidth(this.gantt, data);
-      gantt.render();
+      this.openAllTasks();
+      this.gantt.render();
     };
+
     const selectedMonth = this.month.value;
     const selectedMonthRange = this.monthRange.value;
-    const statusCheckboxes = document.querySelectorAll(
-      'input[name="status_ids[]"]:checked',
-    ); // 選択されたチェックボックスを取得
-    const selectedStatusIds = Array.from(statusCheckboxes).map(
+    const statusCheckboxes = Array.from(
+      document.querySelectorAll('input[name="status_ids[]"]:checked'),
+    );
+    const selectedStatusIds = statusCheckboxes.map(
       (checkbox) => checkbox.value,
-    ); // チェックボックスの値を配列として取得
+    );
 
     this.ticketGanttHelper.getTasks(
       this.projectId,
@@ -252,7 +292,6 @@ class GanttHelper {
     this.loadTasks();
   };
 
-  // Events
   attachOnAfterTaskAdd() {
     this.gantt.attachEvent("onAfterTaskAdd", (id, task) => {
       const successCallback = (data) => {
@@ -269,8 +308,8 @@ class GanttHelper {
 
   attachOnAfterTaskUpdate() {
     this.gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
-      const successCallback = (data) => {
-        /* console.log(data); */
+      const successCallback = () => {
+        this.gantt.render();
       };
       this.ticketGanttHelper.updateTicket(
         this.projectId,
@@ -283,9 +322,9 @@ class GanttHelper {
   }
 
   attachOnAfterTaskDelete() {
-    this.gantt.attachEvent("onAfterTaskDelete", (id, task) => {
-      const successCallback = (data) => {
-        /* console.log(data); */
+    this.gantt.attachEvent("onAfterTaskDelete", (id) => {
+      const successCallback = () => {
+        // Task deleted
       };
       this.ticketGanttHelper.deleteTicket(
         this.projectId,
@@ -312,8 +351,8 @@ class GanttHelper {
 
   attachOnAfterLinkUpdate() {
     this.gantt.attachEvent("onAfterLinkUpdate", (id, link) => {
-      const successCallback = (data) => {
-        // console.log(data);
+      const successCallback = () => {
+        // Link updated successfully
       };
       this.ticketGanttHelper.updateTicketRelation(
         this.projectId,
@@ -325,13 +364,13 @@ class GanttHelper {
   }
 
   attachOnAfterLinkDelete() {
-    this.gantt.attachEvent("onAfterLinkDelete", (id, link) => {
-      const successCallback = (response) => {
-        // console.log(response);
+    this.gantt.attachEvent("onAfterLinkDelete", (id) => {
+      const successCallback = () => {
+        // Link deleted successfully
       };
       this.ticketGanttHelper.deleteTicketRelation(
         this.projectId,
-        link,
+        id,
         successCallback,
         this.eventFailureCallback,
       );
@@ -361,9 +400,10 @@ class GanttHelper {
     });
 
     const doDrag = (e) => {
-      this.resizer.style.left = startWidth + e.clientX - startX + 16 + "px";
-      this.gantt.config.grid_width = startWidth + e.clientX - startX;
-      this.ganttGrid.style.width = startWidth + e.clientX - startX + "px";
+      const newWidth = startWidth + e.clientX - startX;
+      this.resizer.style.left = newWidth + 16 + "px";
+      this.gantt.config.grid_width = newWidth;
+      this.ganttGrid.style.width = newWidth + "px";
     };
 
     const stopDrag = () => {
@@ -373,70 +413,64 @@ class GanttHelper {
     };
   }
 
-  // 現在の月を取得し、月入力フィールドに設定する
   initMonthFilter() {
     const currentDate = new Date();
     const year = currentDate.getFullYear();
-    const month = (currentDate.getMonth() + 1).toString().padStart(2, "0"); // 月を2桁に
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, "0");
     this.month.value = `${year}-${month}`;
     this.monthRange.value = 3;
   }
 
   attachOnChangeMonthChange() {
-    const helper = this;
-    this.month.addEventListener("change", (e) => {
-      helper.loadTasks();
+    this.month.addEventListener("change", () => {
+      this.loadTasks();
     });
   }
 
   attachOnChangeMonthRangeChange() {
-    const helper = this;
-    this.monthRange.addEventListener("change", (e) => {
-      helper.loadTasks();
+    this.monthRange.addEventListener("change", () => {
+      this.loadTasks();
     });
   }
 
   attachOnOpenAllTasks() {
-    const helper = this;
-    this.openAllBtnElement.addEventListener("click", (e) => {
-      helper.gantt.eachTask(function (task) {
-        task.$open = true;
-      });
-      helper.gantt.render();
+    this.openAllBtnElement.addEventListener("click", () => {
+      this.openAllTasks();
+      this.gantt.render();
+    });
+  }
+
+  openAllTasks() {
+    this.gantt.eachTask((task) => {
+      task.$open = true;
     });
   }
 
   attachOnCloseAllTasks() {
-    const helper = this;
-    this.closeAllBtnElement.addEventListener("click", (e) => {
-      helper.gantt.eachTask(function (task) {
+    this.closeAllBtnElement.addEventListener("click", () => {
+      this.gantt.eachTask((task) => {
         task.$open = false;
       });
-      helper.gantt.render();
+      this.gantt.render();
     });
   }
 
   attachOnChangeStatus() {
-    const helper = this;
-    for (let i = 0; i < this.statusIds.length; i++) {
-      this.statusIds[i].addEventListener("change", function () {
-        helper.loadTasks(); // チェックボックスの状態が変わったときに呼び出される
+    Array.from(this.statusIds).forEach((statusId) => {
+      statusId.addEventListener("change", () => {
+        this.loadTasks();
       });
-    }
+    });
   }
 
-  // テキストの長さに基づいてグリッド幅を設定する関数
   calculateGridWidth(gantt, tasks) {
-    let maxTextLength = 0;
-    tasks.data.forEach((task) => {
-      if (task.text.length > maxTextLength) {
-        maxTextLength = task.text.length;
-      }
-    });
+    let maxTextLength = tasks.data.reduce(
+      (max, task) => Math.max(max, task.text.length),
+      0,
+    );
+    const pixelsPerChar = 11;
+    const space = 0;
 
-    // 1文字あたりのピクセル数（仮定）
-    const pixelsPerChar = 11; // 余白を追加
-    const space = 0; // 余白を追加
     const idWidth = 4 * pixelsPerChar + space;
     const textWidth = maxTextLength * pixelsPerChar + space;
     const startDateWidth = 8 * pixelsPerChar + space;
@@ -444,20 +478,9 @@ class GanttHelper {
     const durationWidth = 3 * pixelsPerChar + space;
     const progressWidth = 3 * pixelsPerChar + space;
 
-    // カスタム列
     gantt.config.columns = [
-      {
-        name: "id",
-        label: "Id",
-        align: "center",
-        width: idWidth,
-      },
-      {
-        name: "text",
-        label: "Task name",
-        width: textWidth,
-        tree: true,
-      },
+      { name: "id", label: "Id", align: "center", width: idWidth },
+      { name: "text", label: "Task name", width: textWidth, tree: true },
       {
         name: "start_date",
         label: "Start time",
@@ -483,12 +506,7 @@ class GanttHelper {
         resize: true,
         width: progressWidth,
       },
-      {
-        name: "add",
-        label: "",
-        width: 44,
-        align: "center",
-      },
+      { name: "add", label: "", width: 44, align: "center" },
     ];
 
     const gridWidth =
@@ -498,7 +516,6 @@ class GanttHelper {
       endDateWidth +
       durationWidth +
       progressWidth;
-
     gantt.config.grid_width = gridWidth;
   }
 }

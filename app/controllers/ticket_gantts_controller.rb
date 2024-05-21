@@ -15,8 +15,7 @@ class TicketGanttsController < ApplicationController
     end_date = start_date >> selected_month_range
 
     statuses = IssueStatus.all
-    default_statuses = statuses.where.not(name: ['Closed', 'Resolved']).pluck(:id)
-    selected_stautes  = params[:status_ids] || default_statuses
+    selected_stautes = statuses.where.not(id: params[:status_ids]).pluck(:id) #|| statuses.where.not(name: ['Closed', 'Resolved']).pluck(:id)
     issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, selected_stautes).order(:start_date)
     # プロジェクト内のチケットのIDを取得
     issue_ids = issues.pluck(:id)

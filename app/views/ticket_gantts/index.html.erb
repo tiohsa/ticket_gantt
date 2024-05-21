@@ -11,7 +11,7 @@
   status not
   <% IssueStatus.all.each do |status| %>
     <div style="margin-right: 10px;">
-      <%= check_box_tag 'status_ids[]', status.id, (params[:status_ids] || IssueStatus.where(name: ['Closed', 'Resolved']).pluck(:id)).include?(status.id), id: "status_ids_#{status.id}", class: 'status-checkbox' %>
+      <%= check_box_tag 'status_ids[]', status.id, (params[:status_ids] || IssueStatus.where(name: ['終了', '解決']).pluck(:id)).include?(status.id), id: "status_ids_#{status.id}", class: 'status-checkbox' %>
       <%= label_tag "status_ids_#{status.id}", status.name %>
     </div>
   <% end %>
@@ -49,6 +49,6 @@
   var org_grid_width = 0;
   document.addEventListener('DOMContentLoaded', function() {
     const ganttHelper = new GanttHelper(projectId, "gantt_here", ".gantt_layout_content", ".resizer", "month", "monthRange", "status-checkbox", "openAllBtn", "closeAllBtn");
-    ganttHelper.setup();
+    ganttHelper.setUp();
   });
 </script>
