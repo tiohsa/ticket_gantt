@@ -18,7 +18,10 @@ class TicketGanttsController < ApplicationController
     default_statuses = statuses.where.not(name: ['Closed', 'Resolved']).pluck(:id)
     selected_stautes  = params[:status_ids] || default_statuses
     issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, selected_stautes).order(:start_date)
-    relations = IssueRelation.all
+    # プロジェクト内のチケットのIDを取得
+    issue_ids = issues.pluck(:id)
+    # プロジェクト内のチケットに関連する関係を取得
+    relations = IssueRelation.where(issue_from_id: issue_ids).or(IssueRelation.where(issue_to_id: issue_ids))
 
     respond_to do |format|
         format.html
@@ -155,6 +158,7 @@ class TicketGanttsController < ApplicationController
     @priorities = IssuePriority.where("active = true")
     render json: { priorities: @priorities }
   end
+
   ##############################################
   # private
   ##############################################
@@ -181,8 +185,8 @@ class TicketGanttsController < ApplicationController
     relations.map do |relation|
       {
         id: relation.id,
-        source: relation.issue_from_id,
-        target: relation.issue_to_id,
+        target: relation.issue_from_id,
+        source: relation.issue_to_id,
         type: map_redmine_to_gantt(relation.relation_type)
       }
     end
