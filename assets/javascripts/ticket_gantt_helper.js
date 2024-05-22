@@ -20,7 +20,6 @@ class TicketGanttHelper {
   }
 
   createStatusParameter(selectedStatusIds) {
-    console.log(selectedStatusIds);
     if (!selectedStatusIds) {
       return "";
     }
@@ -177,7 +176,6 @@ class TicketGanttHelper {
 
   // チケットの関係を追加する
   addTicketRelation(projectId, link, successCallback, failureCallback) {
-    console.log(link);
     fetch(`/projects/${projectId}/ticket_gantts/add_relation`, {
       method: "POST",
       headers: {

@@ -14,9 +14,7 @@ class TicketGanttsController < ApplicationController
     start_date = params[:month] ? Date.strptime(params[:month], '%Y-%m') : Date.today.beginning_of_month
     end_date = start_date >> selected_month_range
 
-    statuses = IssueStatus.all
-    selected_stautes = statuses.where.not(id: params[:status_ids]).pluck(:id) #|| statuses.where.not(name: ['Closed', 'Resolved']).pluck(:id)
-    issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, selected_stautes).order(:start_date)
+    issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, params[:status_ids]).order(start_date: :asc, id: :asc)
     # プロジェクト内のチケットのIDを取得
     issue_ids = issues.pluck(:id)
     # プロジェクト内のチケットに関連する関係を取得
@@ -53,7 +51,10 @@ class TicketGanttsController < ApplicationController
 
     # done_ratioが100%になったらステータスをクローズに変更
     if ticket.done_ratio == 100
-      ticket.status_id = IssueStatus.find_by(name: 'Closed').id
+      ticket.status_id = IssueStatus.where(is_closed: true).first.id
+    end
+    if IssueStatus.find_by(id: ticket.status_id).is_closed
+      ticket.done_ratio = 100
     end
 
     if ticket.save
@@ -82,7 +83,10 @@ class TicketGanttsController < ApplicationController
 
     # done_ratioが100%になったらステータスをクローズに変更
     if ticket.done_ratio == 100
-      ticket.status_id = IssueStatus.find_by(name: 'Closed').id
+      ticket.status_id = IssueStatus.where(is_closed: true).first.id
+    end
+    if IssueStatus.find_by(id: ticket.status_id).is_closed
+      ticket.done_ratio = 100
     end
 
     if ticket.save
@@ -175,7 +179,8 @@ class TicketGanttsController < ApplicationController
          parent: ticket.parent_id || 0,
          priority_id: ticket.priority_id,
          tracker_id: ticket.tracker_id,
-         status_id: ticket.status_id
+         status_id: ticket.status_id,
+         is_closed: ticket.status.is_closed
       }
     end
   end

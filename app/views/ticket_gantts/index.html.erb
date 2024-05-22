@@ -8,11 +8,11 @@
   <input type="number" id="monthRange" min="1" max="12" style="width: 48px; text-align: center;">
   months from
   <input type="month" id="month" style="text-align: center; cursor: pointer;">
-  status not
+  status
   <% IssueStatus.all.each do |status| %>
     <div style="margin-right: 10px;">
-      <%= check_box_tag 'status_ids[]', status.id, (params[:status_ids] || IssueStatus.where(name: ['終了', '解決']).pluck(:id)).include?(status.id), id: "status_ids_#{status.id}", class: 'status-checkbox' %>
-      <%= label_tag "status_ids_#{status.id}", status.name %>
+      <%= check_box_tag 'status_ids[]', status.id, (params[:status_ids] || IssueStatus.where(is_closed: false).pluck(:id)).include?(status.id), id: "status_ids_#{status.id}", class: 'status-checkbox' %>
+      <%= label_tag "status_ids_#{status.id}", status.name, class: "status_ids" %>
     </div>
   <% end %>
 </div>
@@ -29,20 +29,23 @@
       border: 1px solid #eee;
       cursor: ew-resize;
   }
-  .high-priority .gantt_task_content {
-      background-color: red;
-      color: white;
+  .status-checkbox{
+    cursor: pointer;
   }
-
-  .urgent-priority .gantt_task_content {
-      background-color: orange;
-      color: white;
+  .status_ids{
+    cursor: pointer;
   }
-
-  .immediate-priority .gantt_task_content {
-      background-color: green;
-      color: white;
+  .closed-task {
+    text-decoration: line-through;
+    background: #bbb
   }
+  .low-progress {
+    background-color: red;  /* 低進捗率の場合 */
+  }
+  .medium-progress {
+    background-color: orange;  /* 中進捗率の場合 */
+  }
+   */
 </style>
 <script>
   var projectId = "<%= @project.id %>";

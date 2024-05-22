@@ -31,15 +31,8 @@ class GanttHelper {
     this.attachOnCloseAllTasks();
     this.attachOnChangeStatus();
 
-    this.gantt.config.duration_step = 1;
-    this.gantt.config.round_dnd_dates = true;
-    this.gantt.config.row_height = 24;
-
-    // マウスドラッグによるスクロールを有効にする
-    this.gantt.config.touch = "force";
-    // マウスホイールによる水平スクロールを有効にする
-    this.gantt.config.scroll_on_click = true;
-    this.gantt.config.autoscroll = true;
+    // config
+    this.setUpConfig();
 
     this.createLightbox();
     this.setUpLabel();
@@ -60,6 +53,41 @@ class GanttHelper {
     this.attachOnGanttRender();
     this.attachResizer();
     // this.setUpMouseScroll();
+  }
+
+  setUpConfig() {
+    this.gantt.config.duration_step = 1;
+    this.gantt.config.round_dnd_dates = true;
+    this.gantt.config.row_height = 24;
+
+    // マウスドラッグによるスクロールを有効にする
+    this.gantt.config.touch = "force";
+    // マウスホイールによる水平スクロールを有効にする
+    this.gantt.config.scroll_on_click = true;
+    this.gantt.config.autoscroll = true;
+
+    this.gantt.config.scale_unit = "month"; // 主スケールを月単位に設定
+    this.gantt.config.date_scale = "%F %Y"; // 月と年を表示
+    this.gantt.config.subscales = [
+      { unit: "week", step: 1, date: "Week %W" }, // サブスケールを週単位に設定
+    ];
+    this.gantt.config.time_step = 1440;
+
+    const yearMonth = this.month.value.split("-");
+    const range = parseInt(this.monthRange.value);
+    var startDate = new Date(
+      parseInt(yearMonth[0]),
+      parseInt(yearMonth[1]) - 1,
+      1,
+    );
+    var endDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth() + range,
+      0,
+    );
+    // Ganttチャートの表示範囲を設定
+    this.gantt.config.start_date = startDate;
+    this.gantt.config.end_date = endDate;
   }
 
   createLightbox() {
@@ -309,6 +337,7 @@ class GanttHelper {
   attachOnAfterTaskUpdate() {
     this.gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
       const successCallback = () => {
+        // this.loadTasks();
         this.gantt.render();
       };
       this.ticketGanttHelper.updateTicket(
@@ -480,7 +509,18 @@ class GanttHelper {
 
     gantt.config.columns = [
       { name: "id", label: "Id", align: "center", width: idWidth },
-      { name: "text", label: "Task name", width: textWidth, tree: true },
+      {
+        name: "text",
+        label: "Task name",
+        width: textWidth,
+        tree: true,
+        template: function (task) {
+          if (task.is_closed) {
+            return "<span class='closed-task'>" + task.text + "</span>";
+          }
+          return task.text;
+        },
+      },
       {
         name: "start_date",
         label: "Start time",
@@ -508,6 +548,20 @@ class GanttHelper {
       },
       { name: "add", label: "", width: 44, align: "center" },
     ];
+    // タスクテキストのカスタマイズ
+    this.gantt.templates.task_text = function (start, end, task) {
+      return Math.floor((task.progress * 100) / 10) * 10 + "%";
+    };
+
+    this.gantt.templates.task_class = function (start, end, task) {
+      if (task.progress < 0.3) {
+        return "low-progress"; // 進捗率が30%未満の場合
+      } else if (task.progress < 0.7) {
+        return "medium-progress"; // 進捗率が30%以上70%未満の場合
+      } else {
+        return ""; // 進捗率が70%以上の場合
+      }
+    };
 
     const gridWidth =
       idWidth +
