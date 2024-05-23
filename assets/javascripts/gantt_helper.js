@@ -14,6 +14,9 @@ class GanttHelper {
       options.closeAllButton,
     );
     this.viewRangeElement = document.getElementById(options.viewRangeElement);
+    this.ganttHeightElement = document.getElementById(
+      options.ganttHeightElement,
+    );
   }
 
   setUp() {
@@ -38,6 +41,7 @@ class GanttHelper {
     this.getStatus();
     this.loadTasks();
     this.attachOnChangeViewRange();
+    this.attachOnChangeGanttHeight();
     this.attachOnAfterTaskAdd();
     this.attachOnAfterTaskUpdate();
     this.attachOnAfterTaskDelete();
@@ -56,7 +60,6 @@ class GanttHelper {
 
     // マウスドラッグによるスクロールを有効にする
     this.gantt.config.touch = "force";
-    // マウスホイールによる水平スクロールを有効にする
     this.gantt.config.scroll_on_click = true;
     this.gantt.config.autoscroll = true;
 
@@ -328,6 +331,14 @@ class GanttHelper {
               ? "%F"
               : "%Y";
       gantt.render();
+    });
+  }
+
+  attachOnChangeGanttHeight() {
+    this.ganttHeightElement.addEventListener("change", function () {
+      var height = this.value + "px";
+      document.getElementById("gantt_here").style.height = height;
+      ganttHelper.resize();
     });
   }
 
