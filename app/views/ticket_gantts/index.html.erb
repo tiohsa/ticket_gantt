@@ -3,11 +3,18 @@
 <%= javascript_include_tag 'ticket_gantt_helper.js', plugin: :ticket_gantt %>
 <%= javascript_include_tag 'gantt_helper.js', plugin: :ticket_gantt %>
 <div style="display: flex; flex-wrap: wrap; align-items: center;">
-  <button id="openAllBtn" style="cursor: pointer;">Open All</button>
-  <button id="closeAllBtn" style="cursor: pointer;">Close All</button>
+  <button id="openAllButton" style="cursor: pointer;">Open All</button>
+  <button id="closeAllButton" style="cursor: pointer;">Close All</button>
   <input type="number" id="monthRange" min="1" max="12" style="width: 48px; text-align: center;">
   months from
   <input type="month" id="month" style="text-align: center; cursor: pointer;">
+  View range:
+  <select id="viewRange" style="margin-right: 10px;">
+    <option value="day">Day</option>
+    <option value="week">Week</option>
+    <option value="month" selected>Month</option>
+    <option value="year">Year</option>
+  </select>
   status
   <% IssueStatus.all.each do |status| %>
     <div style="margin-right: 10px;">
@@ -40,18 +47,33 @@
     background: #bbb
   }
   .low-progress {
-    background-color: red;  /* 低進捗率の場合 */
+    background-color: #EB9AA5;  /* 低進捗率の場合 */
   }
   .medium-progress {
-    background-color: orange;  /* 中進捗率の場合 */
+    background-color: #EBE09A;  /* 中進捗率の場合 */
   }
-   */
+  .high-progress {
+    background-color: #9ACEEB ;  /* 中進捗率の場合 */
+  }
 </style>
 <script>
   var projectId = "<%= @project.id %>";
   var org_grid_width = 0;
   document.addEventListener('DOMContentLoaded', function() {
-    const ganttHelper = new GanttHelper(projectId, "gantt_here", ".gantt_layout_content", ".resizer", "month", "monthRange", "status-checkbox", "openAllBtn", "closeAllBtn");
+  const options = {
+      projectId: projectId,
+      ganttElementId: "gantt_here",
+      ganttLayoutContentElement: ".gantt_layout_content",
+      resizerElement: ".resizer",
+      monthElement: "month",
+      monthRangeElement: "monthRange",
+      statusIdsElement: "status-checkbox",
+      openAllButton: "openAllButton",
+      closeAllButton: "closeAllButton",
+      viewRangeElement: "viewRange"
+    };
+
+    const ganttHelper = new GanttHelper(options);
     ganttHelper.setUp();
   });
 </script>

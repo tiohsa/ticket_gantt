@@ -1,26 +1,19 @@
 class GanttHelper {
-  constructor(
-    projectId,
-    ganttElementId,
-    ganttLayoutContentElement,
-    resizerElement,
-    monthElement,
-    monthRangeElement,
-    statusIdsElement,
-    openAllBtn,
-    closeAllBtn,
-  ) {
-    this.projectId = projectId;
+  constructor(options) {
+    this.projectId = options.projectId;
     this.gantt = gantt;
-    this.gantt.init(ganttElementId);
+    this.gantt.init(options.ganttElementId);
     this.ticketGanttHelper = new TicketGanttHelper();
-    this.ganttGrid = document.querySelector(ganttLayoutContentElement);
-    this.resizer = document.querySelector(resizerElement);
-    this.month = document.getElementById(monthElement);
-    this.monthRange = document.getElementById(monthRangeElement);
-    this.statusIds = document.getElementsByClassName(statusIdsElement);
-    this.openAllBtnElement = document.getElementById(openAllBtn);
-    this.closeAllBtnElement = document.getElementById(closeAllBtn);
+    this.ganttGrid = document.querySelector(options.ganttLayoutContentElement);
+    this.resizer = document.querySelector(options.resizerElement);
+    this.month = document.getElementById(options.monthElement);
+    this.monthRange = document.getElementById(options.monthRangeElement);
+    this.statusIds = document.getElementsByClassName(options.statusIdsElement);
+    this.openAllButtonElement = document.getElementById(options.openAllButton);
+    this.closeAllButtonElement = document.getElementById(
+      options.closeAllButton,
+    );
+    this.viewRangeElement = document.getElementById(options.viewRangeElement);
   }
 
   setUp() {
@@ -44,6 +37,7 @@ class GanttHelper {
     this.setUpProgressOptions();
     this.getStatus();
     this.loadTasks();
+    this.attachOnChangeViewRange();
     this.attachOnAfterTaskAdd();
     this.attachOnAfterTaskUpdate();
     this.attachOnAfterTaskDelete();
@@ -69,6 +63,7 @@ class GanttHelper {
     this.gantt.config.scale_unit = "month"; // 主スケールを月単位に設定
     this.gantt.config.date_scale = "%F %Y"; // 月と年を表示
     this.gantt.config.subscales = [
+      // { unit: "day", step: 1, date: "Date %D" },
       { unit: "week", step: 1, date: "Week %W" }, // サブスケールを週単位に設定
     ];
     this.gantt.config.time_step = 1440;
@@ -320,6 +315,22 @@ class GanttHelper {
     this.loadTasks();
   };
 
+  attachOnChangeViewRange() {
+    this.viewRangeElement.addEventListener("change", function () {
+      var value = this.value;
+      gantt.config.scale_unit = value;
+      gantt.config.date_scale =
+        value === "day"
+          ? "%d %M"
+          : value === "week"
+            ? "Week #%W"
+            : value === "month"
+              ? "%F"
+              : "%Y";
+      gantt.render();
+    });
+  }
+
   attachOnAfterTaskAdd() {
     this.gantt.attachEvent("onAfterTaskAdd", (id, task) => {
       const successCallback = (data) => {
@@ -463,7 +474,7 @@ class GanttHelper {
   }
 
   attachOnOpenAllTasks() {
-    this.openAllBtnElement.addEventListener("click", () => {
+    this.openAllButtonElement.addEventListener("click", () => {
       this.openAllTasks();
       this.gantt.render();
     });
@@ -476,7 +487,7 @@ class GanttHelper {
   }
 
   attachOnCloseAllTasks() {
-    this.closeAllBtnElement.addEventListener("click", () => {
+    this.closeAllButtonElement.addEventListener("click", () => {
       this.gantt.eachTask((task) => {
         task.$open = false;
       });
@@ -559,7 +570,7 @@ class GanttHelper {
       } else if (task.progress < 0.7) {
         return "medium-progress"; // 進捗率が30%以上70%未満の場合
       } else {
-        return ""; // 進捗率が70%以上の場合
+        return "high-progress"; // 進捗率が70%以上の場合
       }
     };
 
