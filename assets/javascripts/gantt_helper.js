@@ -17,6 +17,9 @@ class GanttHelper {
     this.ganttHeightElement = document.getElementById(
       options.ganttHeightElement,
     );
+    this.fullscreenButtonElement = document.getElementById(
+      options.fullscreenButtonElement,
+    );
   }
 
   setUp() {
@@ -31,7 +34,6 @@ class GanttHelper {
     this.attachOnChangeStatus();
     this.createLightbox();
     this.setUpLabel();
-    this.setUpPriorityColors();
     this.attachOnTaskCreated();
     this.attachOnLightboxSave();
     this.getTrackers();
@@ -50,6 +52,7 @@ class GanttHelper {
     this.attachOnGanttRender();
     this.attachResizer();
     // this.setUpMouseScroll();
+    this.attachFullScreenButton();
   }
 
   setUpConfig() {
@@ -65,8 +68,8 @@ class GanttHelper {
     this.gantt.config.scale_unit = "month"; // 主スケールを月単位に設定
     this.gantt.config.date_scale = "%F %Y"; // 月と年を表示
     this.gantt.config.subscales = [
-      // { unit: "day", step: 1, date: "Date %D" },
-      { unit: "week", step: 1, date: "Week %W" }, // サブスケールを週単位に設定
+      { unit: "day", step: 1, date: "Date %D" },
+      // { unit: "week", step: 1, date: "Week %W" }, // サブスケールを週単位に設定
     ];
     this.gantt.config.time_step = 1440;
 
@@ -88,6 +91,12 @@ class GanttHelper {
 
     this.gantt.plugins({
       marker: true,
+      click_drag: true,
+      multiselect: true,
+      drag_timeline: true,
+      fullscreen: true,
+      // quick_info: true,
+      tooltip: true,
     });
     this.gantt.init(this.ganttElementId);
     this.ganttGrid = document.querySelector(this.ganttLayoutContentElement);
@@ -95,12 +104,28 @@ class GanttHelper {
 
   setUpMarder() {
     var dateToStr = this.gantt.date.date_to_str(gantt.config.task_date);
-    var markerId = this.gantt.addMarker({
+    this.gantt.addMarker({
       start_date: new Date(), //a Date object that sets the marker's date
       css: "today", //a CSS class applied to the marker
       text: "Now", //the marker title
       title: dateToStr(new Date()), // the marker's tooltip
     });
+  }
+
+  attachFullScreenButton() {
+    this.fullscreenButtonElement.addEventListener(
+      "click",
+      function () {
+        if (!gantt.getState().fullscreen) {
+          // expanding the gantt to full screen
+          gantt.expand();
+        } else {
+          // collapsing the gantt to the normal mode
+          gantt.collapse();
+        }
+      },
+      false,
+    );
   }
 
   createLightbox() {
@@ -147,6 +172,12 @@ class GanttHelper {
         options: [],
       },
       { name: "time", type: "duration", map_to: "auto" },
+      {
+        name: "milestone",
+        type: "checkbox",
+        map_to: "milestone",
+        options: [{ key: 1, label: "Yes" }],
+      },
     ];
   }
 
@@ -156,18 +187,14 @@ class GanttHelper {
     this.gantt.locale.labels.section_priority = "Priority";
     this.gantt.locale.labels.section_status = "Status";
     this.gantt.locale.labels.section_progress = "Progress";
+    this.gantt.locale.labels.section_milestone = "Milestone";
   }
 
-  setUpPriorityColors() {
-    this.gantt.templates.task_class = function (start, end, task) {
-      if (task.priority === "High") {
-        return "high-priority";
-      } else if (task.priority === "Urgent") {
-        return "urgent-priority";
-      } else if (task.priority === "Immediate") {
-        return "immediate-priority";
-      }
-      return "";
+  setUpTooltip() {
+    this.gantt.templates.tooltip_text = function (start, end, task) {
+      return (
+        "<b>Task:</b> " + task.text + "<br/><b>Duration:</b> " + task.duration
+      );
     };
   }
 
@@ -431,13 +458,13 @@ class GanttHelper {
   }
 
   attachOnAfterLinkDelete() {
-    this.gantt.attachEvent("onAfterLinkDelete", (id) => {
+    this.gantt.attachEvent("onAfterLinkDelete", (id, link) => {
       const successCallback = () => {
         // Link deleted successfully
       };
       this.ticketGanttHelper.deleteTicketRelation(
         this.projectId,
-        id,
+        link,
         successCallback,
         this.eventFailureCallback,
       );
@@ -445,7 +472,6 @@ class GanttHelper {
   }
 
   attachOnGanttRender() {
-    console.log(this.ganttGrid);
     this.gantt.attachEvent("onGanttRender", () => {
       const rect = this.ganttGrid.getBoundingClientRect();
       this.resizer.style.left = rect.width + 16 + "px";
@@ -589,17 +615,25 @@ class GanttHelper {
     ];
     // タスクテキストのカスタマイズ
     this.gantt.templates.task_text = function (start, end, task) {
-      return Math.floor((task.progress * 100) / 10) * 10 + "%";
+      if (task.milestone[0] == "1") {
+        return "<div class='milestone-mark'></div>";
+      } else {
+        return Math.floor((task.progress * 100) / 10) * 10 + "%";
+      }
     };
 
     this.gantt.templates.task_class = function (start, end, task) {
-      if (task.progress < 0.3) {
-        return "low-progress"; // 進捗率が30%未満の場合
+      var css = "";
+      if (task.milestone[0] == "1") {
+        return " milestone-task";
+      } else if (task.progress < 0.3) {
+        css += " low-progress"; // 進捗率が30%未満の場合
       } else if (task.progress < 0.7) {
-        return "medium-progress"; // 進捗率が30%以上70%未満の場合
-      } else {
-        return "high-progress"; // 進捗率が70%以上の場合
+        css += " medium-progress"; // 進捗率が30%以上70%未満の場合
+      } else if (task.progress >= 0.7) {
+        css += " high-progress"; // 進捗率が70%以上の場合
       }
+      return css;
     };
 
     const gridWidth =

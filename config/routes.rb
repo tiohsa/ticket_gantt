@@ -2,7 +2,7 @@
 # See: http://guides.rubyonrails.org/routing.html
 # plugins/ticket_gantt/config/routes.rb
 Rails.application.routes.draw do
-  resources :priorities, only: [:index]
+  # resources :priorities, only: [:index]
   resources :projects do
     resources :ticket_gantts, only: [:index] do
       collection do
@@ -11,6 +11,7 @@ Rails.application.routes.draw do
         get :statuses
         get :trackers
         get :priorities
+        get :categories
       end
       member do
         put :update_ticket

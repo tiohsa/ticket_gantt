@@ -96,6 +96,19 @@ class TicketGanttHelper {
       .catch((error) => failureCallback(error));
   }
 
+  // カテゴリを取得する
+  getCategories(successCallback, failureCallback) {
+    fetch(`/projects/${projectId}/ticket_gantts/categories`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    })
+      .then((response) => this.checkResponse(response))
+      .then((data) => successCallback(data))
+      .catch((error) => failureCallback(error));
+  }
+
   // チケットを追加する
   addTicket(projectId, task, successCallback, failureCallback) {
     fetch(`/projects/${projectId}/ticket_gantts/add_ticket`, {
@@ -116,7 +129,10 @@ class TicketGanttHelper {
           status_id: task.status_id,
           done_ratio: this.roundToNearestTen(task.progress * 100),
           start_date: task.start_date.toLocaleDateString(),
-          due_date: task.end_date.toLocaleDateString(),
+          due_date:
+            task.milestone[0] == "1"
+              ? null
+              : task.end_date.toLocaleDateString(),
           parent_id: task.parent,
         },
       }),
@@ -128,6 +144,9 @@ class TicketGanttHelper {
 
   // チケットを更新する
   updateTicket(projectId, ticketId, task, successCallback, failureCallback) {
+    var due =
+      task.milestone[0] == 1 ? null : task.end_date.toLocaleDateString();
+    console.log(due);
     fetch(`/projects/${projectId}/ticket_gantts/${ticketId}/update_ticket`, {
       method: "PUT",
       headers: {
@@ -147,7 +166,10 @@ class TicketGanttHelper {
           status_id: task.status_id,
           done_ratio: this.roundToNearestTen(task.progress * 100),
           start_date: task.start_date.toLocaleDateString(),
-          due_date: task.end_date.toLocaleDateString(),
+          due_date:
+            task.milestone[0] == "1"
+              ? null
+              : task.end_date.toLocaleDateString(),
           parent_id: task.parent,
         },
       }),
@@ -235,11 +257,6 @@ class TicketGanttHelper {
           .querySelector('meta[name="csrf-token"]')
           .getAttribute("content"),
       },
-      body: JSON.stringify({
-        relation: {
-          id: link.id,
-        },
-      }),
     })
       .then((response) => this.checkResponse(response))
       .then((data) => successCallback(data))

@@ -40,13 +40,15 @@ class TicketGanttsController < ApplicationController
     ticket.status_id = issue_params[:status_id] unless issue_params[:status_id].nil?
     ticket.done_ratio = issue_params[:done_ratio] unless issue_params[:done_ratio].nil?
     ticket.start_date = Date.parse(issue_params[:start_date]) rescue nil unless issue_params[:start_date].nil?
-    ticket.parent_id = issue_params[:parent_id] unless issue_params[:parent_id].nil?
+    ticket.parent_id = issue_params[:parent_id] unless (issue_params[:parent_id].nil? || issue_params[:parent_id] == 0)
     ticket.author = User.current
 
-    due_date = Date.parse(issue_params[:due_date]) rescue nil unless issue_params[:due_date].nil?
+    due_date = issue_params[:due_date] ? Date.parse(issue_params[:due_date]) : nil
     # fullcalendarから受ける日付は一日増やしたので戻す
     if due_date && ticket.start_date
       ticket.due_date = due_date <= ticket.start_date ? ticket.start_date : due_date - 1
+    else
+      ticket.due_date = due_date
     end
 
     # done_ratioが100%になったらステータスをクローズに変更
@@ -72,13 +74,15 @@ class TicketGanttsController < ApplicationController
     ticket.priority_id = issue_params[:priority_id] unless issue_params[:priority_id].nil?
     ticket.status_id = issue_params[:status_id] unless issue_params[:status_id].nil?
     ticket.done_ratio = issue_params[:done_ratio] unless issue_params[:done_ratio].nil?
-    ticket.parent_id = issue_params[:parent_id] unless issue_params[:parent_id].nil?
+    ticket.parent_id = issue_params[:parent_id] unless (issue_params[:parent_id].nil? || issue_params[:parent_id] == 0)
     ticket.start_date = Date.parse(issue_params[:start_date]) rescue nil unless issue_params[:start_date].nil?
 
-    due_date = Date.parse(issue_params[:due_date]) rescue nil unless issue_params[:due_date].nil?
+    due_date = issue_params[:due_date] ? Date.parse(issue_params[:due_date]) : nil
     # fullcalendarから受ける日付は一日増やしたので戻す
     if due_date && ticket.start_date
       ticket.due_date = due_date <= ticket.start_date ? ticket.start_date : due_date - 1
+    else
+      ticket.due_date = due_date
     end
 
     # done_ratioが100%になったらステータスをクローズに変更
@@ -136,7 +140,7 @@ class TicketGanttsController < ApplicationController
   end
 
   def delete_relation
-    relation = IssueRelation.find(relation_params[:id])
+    relation = IssueRelation.find(params[:id])
     if relation.destroy
       render json: { message: 'Relation deleted successfully' }, status: :ok
     else
@@ -162,6 +166,11 @@ class TicketGanttsController < ApplicationController
     render json: { priorities: @priorities }
   end
 
+  def categories
+    @categories = Project.find(params[:project_id]).issue_categories
+    render json: { categories: @categories }
+  end
+
   ##############################################
   # private
   ##############################################
@@ -176,11 +185,12 @@ class TicketGanttsController < ApplicationController
          start_date: ticket.start_date.strftime("%d-%m-%Y"),
          duration: ticket.start_date && ticket.due_date ? (ticket.due_date - ticket.start_date).to_i + 1 : 1,
          progress: ticket.done_ratio / 100.0,
-         parent: ticket.parent_id || 0,
+         parent: ticket.parent_id,
          priority_id: ticket.priority_id,
          tracker_id: ticket.tracker_id,
          status_id: ticket.status_id,
-         is_closed: ticket.status.is_closed
+         is_closed: ticket.status.is_closed,
+         milestone: ticket.due_date ? ["0"] : ["1"]
       }
     end
   end
