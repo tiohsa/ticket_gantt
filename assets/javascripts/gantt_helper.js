@@ -2,9 +2,9 @@ class GanttHelper {
   constructor(options) {
     this.projectId = options.projectId;
     this.gantt = gantt;
-    this.gantt.init(options.ganttElementId);
+    this.ganttElementId = options.ganttElementId;
     this.ticketGanttHelper = new TicketGanttHelper();
-    this.ganttGrid = document.querySelector(options.ganttLayoutContentElement);
+    this.ganttLayoutContentElement = options.ganttLayoutContentElement;
     this.resizer = document.querySelector(options.resizerElement);
     this.month = document.getElementById(options.monthElement);
     this.monthRange = document.getElementById(options.monthRangeElement);
@@ -21,15 +21,14 @@ class GanttHelper {
 
   setUp() {
     this.initMonthFilter();
+    // config
+    this.setUpConfig();
+
     this.attachOnChangeMonthChange();
     this.attachOnChangeMonthRangeChange();
     this.attachOnOpenAllTasks();
     this.attachOnCloseAllTasks();
     this.attachOnChangeStatus();
-
-    // config
-    this.setUpConfig();
-
     this.createLightbox();
     this.setUpLabel();
     this.setUpPriorityColors();
@@ -86,6 +85,22 @@ class GanttHelper {
     // Ganttチャートの表示範囲を設定
     this.gantt.config.start_date = startDate;
     this.gantt.config.end_date = endDate;
+
+    this.gantt.plugins({
+      marker: true,
+    });
+    this.gantt.init(this.ganttElementId);
+    this.ganttGrid = document.querySelector(this.ganttLayoutContentElement);
+  }
+
+  setUpMarder() {
+    var dateToStr = this.gantt.date.date_to_str(gantt.config.task_date);
+    var markerId = this.gantt.addMarker({
+      start_date: new Date(), //a Date object that sets the marker's date
+      css: "today", //a CSS class applied to the marker
+      text: "Now", //the marker title
+      title: dateToStr(new Date()), // the marker's tooltip
+    });
   }
 
   createLightbox() {
@@ -291,6 +306,7 @@ class GanttHelper {
       this.gantt.parse(data);
       this.calculateGridWidth(this.gantt, data);
       this.openAllTasks();
+      this.setUpMarder();
       this.gantt.render();
     };
 
@@ -338,7 +354,7 @@ class GanttHelper {
     this.ganttHeightElement.addEventListener("change", function () {
       var height = this.value + "px";
       document.getElementById("gantt_here").style.height = height;
-      ganttHelper.resize();
+      this.gantt.resize();
     });
   }
 
@@ -429,6 +445,7 @@ class GanttHelper {
   }
 
   attachOnGanttRender() {
+    console.log(this.ganttGrid);
     this.gantt.attachEvent("onGanttRender", () => {
       const rect = this.ganttGrid.getBoundingClientRect();
       this.resizer.style.left = rect.width + 16 + "px";
