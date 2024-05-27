@@ -65,12 +65,9 @@ class GanttHelper {
     this.gantt.config.scroll_on_click = true;
     this.gantt.config.autoscroll = true;
 
-    this.gantt.config.scale_unit = "month"; // 主スケールを月単位に設定
-    this.gantt.config.date_scale = "%F %Y"; // 月と年を表示
-    this.gantt.config.subscales = [
-      { unit: "day", step: 1, date: "Date %D" },
-      // { unit: "week", step: 1, date: "Week %W" }, // サブスケールを週単位に設定
-    ];
+    gantt.config.scale_unit = "month";
+    gantt.config.date_scale = "%d %M";
+    gantt.config.subscales = [{ unit: "day", step: 1, date: "%d %M" }];
     this.gantt.config.time_step = 1440;
 
     const yearMonth = this.month.value.split("-");
@@ -366,15 +363,34 @@ class GanttHelper {
   attachOnChangeViewRange() {
     this.viewRangeElement.addEventListener("change", function () {
       var value = this.value;
-      gantt.config.scale_unit = value;
-      gantt.config.date_scale =
-        value === "day"
-          ? "%d %M"
-          : value === "week"
-            ? "Week #%W"
-            : value === "month"
-              ? "%F"
-              : "%Y";
+      switch (value) {
+        case "day":
+          gantt.config.scale_unit = "month";
+          gantt.config.date_scale = "%d %M";
+          gantt.config.subscales = [{ unit: "day", step: 1, date: "%d %M" }];
+          break;
+        case "week":
+          gantt.config.scale_unit = "week";
+          gantt.config.date_scale = "Week #%W";
+          gantt.config.subscales = [{ unit: "day", step: 1, date: "%d %M" }];
+          break;
+        case "month":
+          gantt.config.scale_unit = "month";
+          gantt.config.date_scale = "%F";
+          gantt.config.subscales = [
+            { unit: "week", step: 1, date: "Week #%W" },
+          ];
+          break;
+        case "year":
+          gantt.config.scale_unit = "year";
+          gantt.config.date_scale = "%Y";
+          gantt.config.subscales = [{ unit: "month", step: 1, date: "%F" }];
+          break;
+        default:
+          gantt.config.scale_unit = value; // デフォルトは変更なし
+          gantt.config.date_scale = "%d %M"; // もしくはデフォルトのスケール設定
+          gantt.config.subscales = []; // サブスケールのデフォルト設定を空に
+      }
       gantt.render();
     });
   }
