@@ -32,7 +32,7 @@
       <%= label_tag "status_ids_#{status.id}", status.name, class: "status_ids" %>
     </div>
   <% end %>
-  <input id="fullscreen_button" type="button" value="Fullscreen"/>
+  <input id="fullscreen_button" type="button" value="Fullscreen" style="cursor: pointer;"/>
 </div>
 <div class="resizer"></div>
 <div id="gantt_here" class="content" style="width:100%; height: 600px;"></div>
@@ -66,23 +66,20 @@
   .high-progress {
     background-color: #9ACEEB ;  /* 中進捗率の場合 */
   }
-  .milestone-task{
-    border:none;
-    background: transparent;
+  .gantt_task_line.milestone {
+      background-color: transparent;
+      border: none;
   }
-  .milestone-task .gantt_task_progress_drag,
-  .milestone-task .gantt_task_drag
-  {
-    display:none !important;
+  .gantt_task_line.milestone .gantt_task_content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
   }
-  .milestone-mark{
-    background-color: #d33daf;
-    border: 1px solid #61164f;
-    box-sizing: content-box;
-    transform: rotate(45deg);
-    width: 10px;
-    height: 10px;
-    margin: 2px auto;
+  .gantt_task_line.milestone .gantt_task_content:before {
+      content: "\25C6"; /* ダイヤモンド形 */
+      color: #7e4efa; /* 色を変更 */
+      font-size: 24px; /* サイズを大きくする */
+      margin-left: 16px;
   }
 </style>
 <script>

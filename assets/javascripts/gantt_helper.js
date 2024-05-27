@@ -252,6 +252,7 @@ class GanttHelper {
         start_date: today,
         duration: 1,
       });
+      task.milestone = ["0"];
       return true;
     });
   }
@@ -265,6 +266,7 @@ class GanttHelper {
       task.priority_id = item.priority_id;
       task.status_id = item.status_id;
       task.progress = item.progress;
+      task.milestone = item.milestone;
       return true;
     });
   }
@@ -615,17 +617,13 @@ class GanttHelper {
     ];
     // タスクテキストのカスタマイズ
     this.gantt.templates.task_text = function (start, end, task) {
-      if (task.milestone[0] == "1") {
-        return "<div class='milestone-mark'></div>";
-      } else {
-        return Math.floor((task.progress * 100) / 10) * 10 + "%";
-      }
+      return Math.floor((task.progress * 100) / 10) * 10 + "%";
     };
 
     this.gantt.templates.task_class = function (start, end, task) {
       var css = "";
       if (task.milestone[0] == "1") {
-        return " milestone-task";
+        return " milestone";
       } else if (task.progress < 0.3) {
         css += " low-progress"; // 進捗率が30%未満の場合
       } else if (task.progress < 0.7) {

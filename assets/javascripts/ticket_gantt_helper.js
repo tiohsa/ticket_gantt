@@ -144,9 +144,6 @@ class TicketGanttHelper {
 
   // チケットを更新する
   updateTicket(projectId, ticketId, task, successCallback, failureCallback) {
-    var due =
-      task.milestone[0] == 1 ? null : task.end_date.toLocaleDateString();
-    console.log(due);
     fetch(`/projects/${projectId}/ticket_gantts/${ticketId}/update_ticket`, {
       method: "PUT",
       headers: {
