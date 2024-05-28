@@ -134,6 +134,7 @@ class TicketGanttHelper {
               ? null
               : task.end_date.toLocaleDateString(),
           parent_id: task.parent,
+          lock_version: task.lock_version,
         },
       }),
     })
@@ -144,6 +145,7 @@ class TicketGanttHelper {
 
   // チケットを更新する
   updateTicket(projectId, ticketId, task, successCallback, failureCallback) {
+    console.log(task);
     fetch(`/projects/${projectId}/ticket_gantts/${ticketId}/update_ticket`, {
       method: "PUT",
       headers: {
@@ -168,6 +170,7 @@ class TicketGanttHelper {
               ? null
               : task.end_date.toLocaleDateString(),
           parent_id: task.parent,
+          lock_version: task.lock_version,
         },
       }),
     })

@@ -66,7 +66,7 @@ class TicketGanttsController < ApplicationController
     end
   end
 
-  def update_ticket
+  def get_update_ticket()
     ticket = Issue.find(issue_params[:id])
     ticket.subject = issue_params[:subject] unless issue_params[:subject].nil?
     ticket.description = issue_params[:description]
@@ -76,6 +76,7 @@ class TicketGanttsController < ApplicationController
     ticket.done_ratio = issue_params[:done_ratio] unless issue_params[:done_ratio].nil?
     ticket.parent_id = issue_params[:parent_id] unless (issue_params[:parent_id].nil? || issue_params[:parent_id] == 0)
     ticket.start_date = Date.parse(issue_params[:start_date]) rescue nil unless issue_params[:start_date].nil?
+    ticket.lock_version = issue_params[:lock_version]
 
     due_date = issue_params[:due_date] ? Date.parse(issue_params[:due_date]) : nil
     # fullcalendarから受ける日付は一日増やしたので戻す
@@ -92,11 +93,23 @@ class TicketGanttsController < ApplicationController
     if IssueStatus.find_by(id: ticket.status_id).is_closed
       ticket.done_ratio = 100
     end
+    return ticket
+  end
 
-    if ticket.save
-      render json: { message: 'Ticket updated successfully', ticket: ticket }, status: :ok
-    else
-      render json: { message: 'Failed to update ticket', errors: ticket.errors.full_messages }, status: :unprocessable_entity
+  def update_ticket
+    ticket = get_update_ticket()
+    begin
+      ticket.save!
+      ticket.reload
+      render json: { message: 'Ticket updated successfully', ticket: format_issue(ticket), }, status: :ok
+    rescue ActiveRecord::StaleObjectError
+      ticket = get_update_ticket()
+      if ticket.save
+        ticket.reload
+        render json: { message: 'Ticket updated successfully after resolving conflict', ticket: format_issue(ticket) }, status: :ok
+      else
+        render json: { message: 'Failed to update ticket', errors: ticket.errors.full_messages }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -121,7 +134,7 @@ class TicketGanttsController < ApplicationController
         relation_type: map_gantt_type_to_redmine(relation_params[:type])
     )
     if source.save && relation.save
-        render json: { success: true, relation: format_relations([relation]).first }
+        render json: { success: true, relation: format_relation(relation) }
     else
         render json: { success: false, errors: relation.errors.full_messages }, status: :unprocessable_entity
     end
@@ -133,7 +146,7 @@ class TicketGanttsController < ApplicationController
     relation.issue_to_id =  relation_params[:target]
     relation.relation_type = map_gantt_type_to_redmine(relation_params[:type])
     if relation.save
-        render json: { success: true, relation: format_relations([relation]).first }
+        render json: { success: true, relation: format_relation(relation) }
     else
         render json: { success: false, errors: relation.errors.full_messages }, status: :unprocessable_entity
     end
@@ -176,33 +189,42 @@ class TicketGanttsController < ApplicationController
   ##############################################
   private
 
+  def format_issue(ticket)
+    {
+      id: ticket.id,
+      text: ticket.subject,
+      description: ticket.description,
+      start_date: ticket.start_date.strftime("%d-%m-%Y"),
+      duration: ticket.start_date && ticket.due_date ? (ticket.due_date - ticket.start_date).to_i + 1 : 1,
+      progress: ticket.done_ratio / 100.0,
+      parent: ticket.parent_id,
+      priority_id: ticket.priority_id,
+      tracker_id: ticket.tracker_id,
+      status_id: ticket.status_id,
+      is_closed: ticket.status.is_closed,
+      milestone: ticket.due_date ? ["0"] : ["1"],
+      lock_version: ticket.lock_version
+  }
+  end
+
   def format_issues(issues)
     issues.map do |ticket|
-      {
-         id: ticket.id,
-         text: ticket.subject,
-         description: ticket.description,
-         start_date: ticket.start_date.strftime("%d-%m-%Y"),
-         duration: ticket.start_date && ticket.due_date ? (ticket.due_date - ticket.start_date).to_i + 1 : 1,
-         progress: ticket.done_ratio / 100.0,
-         parent: ticket.parent_id,
-         priority_id: ticket.priority_id,
-         tracker_id: ticket.tracker_id,
-         status_id: ticket.status_id,
-         is_closed: ticket.status.is_closed,
-         milestone: ticket.due_date ? ["0"] : ["1"]
-      }
+      format_issue(ticket)
     end
+  end
+
+  def format_relation(relation)
+    {
+      id: relation.id,
+      target: relation.issue_from_id,
+      source: relation.issue_to_id,
+      type: map_redmine_to_gantt(relation.relation_type)
+    }
   end
 
   def format_relations(relations)
     relations.map do |relation|
-      {
-        id: relation.id,
-        target: relation.issue_from_id,
-        source: relation.issue_to_id,
-        type: map_redmine_to_gantt(relation.relation_type)
-      }
+      format_relation(relation)
     end
   end
 
@@ -250,11 +272,16 @@ class TicketGanttsController < ApplicationController
   end
 
   def issue_params
-    params.require(:issue).permit(:id, :subject, :description, :done_ratio, :start_date, :due_date, :parent_id, :tracker_id, :priority_id, :status_id)
+    params.require(:issue).permit(:id, :subject, :description, :done_ratio, :start_date, :due_date, :parent_id, :tracker_id, :priority_id, :status_id, :lock_version)
   end
 
   def relation_params
     params.require(:relation).permit(:id, :source, :target, :type)
   end
 
+  def resolve_conflict(new_attributes)
+    # 競合解決のためのロジックをここに追加
+    # 例: 最新のデータを優先する、またはユーザーに選択肢を提供する
+    self.assign_attributes(new_attributes)
+  end
 end

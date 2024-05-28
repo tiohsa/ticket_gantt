@@ -250,6 +250,7 @@ class GanttHelper {
         duration: 1,
       });
       task.milestone = ["0"];
+      task.lock_version = null;
       return true;
     });
   }
@@ -264,6 +265,7 @@ class GanttHelper {
       task.status_id = item.status_id;
       task.progress = item.progress;
       task.milestone = item.milestone;
+      task.lock_version = item.lock_version;
       return true;
     });
   }
@@ -419,8 +421,9 @@ class GanttHelper {
 
   attachOnAfterTaskUpdate() {
     this.gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
-      const successCallback = () => {
-        // this.loadTasks();
+      const successCallback = (data) => {
+        var task = this.gantt.getTask(id);
+        task.lock_version = data.ticket.lock_version;
         this.gantt.render();
       };
       this.ticketGanttHelper.updateTicket(
