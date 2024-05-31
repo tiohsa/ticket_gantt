@@ -145,7 +145,6 @@ class TicketGanttHelper {
 
   // チケットを更新する
   updateTicket(projectId, ticketId, task, successCallback, failureCallback) {
-    console.log(task);
     fetch(`/projects/${projectId}/ticket_gantts/${ticketId}/update_ticket`, {
       method: "PUT",
       headers: {

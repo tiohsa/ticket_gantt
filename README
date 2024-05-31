@@ -1,11 +1,48 @@
-# My dhtmlx Gantt and Scheduler Plugin
+# Ticket Gantt Plugin for Redmine
 
-This project is an open-source plugin that integrates dhtmlx Gantt and Scheduler.
+## Overview
+The Ticket Gantt plugin for Redmine displays tickets in a Gantt chart view with drag-and-drop functionality. This plugin makes ticket management within projects more intuitive and efficient.
+
+## Features
+- Display Redmine tickets in a Gantt chart view
+- Drag-and-drop functionality to easily change ticket dates
+- Seamless integration into Redmine's project menu
+
+## Installation
+1. Navigate to your Redmine plugins directory:
+    ```sh
+    cd /path/to/redmine/plugins
+    ```
+
+2. Clone the repository:
+    ```sh
+    git clone https://github.com/tiohsa/ticket_gantt.git
+    ```
+
+3. Install dependencies:
+    ```sh
+    bundle install
+    ```
+
+4. Migrate the database:
+    ```sh
+    bundle exec rake redmine:plugins:migrate RAILS_ENV=production
+    ```
+
+5. Restart Redmine:
+    - If using Passenger, restart Apache or Nginx.
+    - If using WEBrick, stop and start the server.
+
+## Usage
+1. Navigate to your project.
+2. Click on the "Gantt" menu item to manage tickets in the Gantt chart view.
+
+## Permissions
+Ensure the appropriate roles have access to the Ticket Gantt:
+- The `view_ticket_gantt` permission allows users to view the Gantt chart and update ticket dates.
+
+## Configuration
+No additional configuration is required after installation. The plugin will be available in the project menu under "Gantt".
 
 ## License
-
-This project is licensed under the GNU General Public License v2.0 - see the [LICENSE](LICENSE) file for details.
-
-## dhtmlx Gantt and Scheduler
-
-Please note that while this project itself is open-source, it uses dhtmlx Gantt and Scheduler, which are also licensed under the GNU General Public License v2.0. See [dhtmlx.com](https://dhtmlx.com) for more information on dhtmlx licensing.
+This project is licensed under the GNU General Public License v2.0. See the [LICENSE](LICENSE) file for details.

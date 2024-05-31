@@ -420,20 +420,28 @@ class GanttHelper {
   }
 
   attachOnAfterTaskUpdate() {
-    this.gantt.attachEvent("onAfterTaskUpdate", (id, task) => {
-      const successCallback = (data) => {
-        var task = this.gantt.getTask(id);
-        task.lock_version = data.ticket.lock_version;
-        this.gantt.render();
-      };
-      this.ticketGanttHelper.updateTicket(
-        this.projectId,
-        id,
-        task,
-        successCallback,
-        this.eventFailureCallback,
-      );
-    });
+    this.gantt.attachEvent(
+      "onAfterTaskUpdate",
+      (id, task) => {
+        const successCallback = (data) => {
+          var task = this.gantt.getTask(id);
+          task.lock_version = data.ticket.lock_version;
+          this.gantt.render();
+        };
+
+        clearTimeout(this.debounceTimeout);
+        this.debounceTimeout = setTimeout(() => {
+          this.ticketGanttHelper.updateTicket(
+            this.projectId,
+            id,
+            task,
+            successCallback,
+            this.eventFailureCallback,
+          );
+        });
+      },
+      100,
+    );
   }
 
   attachOnAfterTaskDelete() {
