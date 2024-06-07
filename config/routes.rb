@@ -1,12 +1,16 @@
 # Plugin's routes
 # See: http://guides.rubyonrails.org/routing.html
-# plugins/ticket_gantt/config/routes.rb
 Rails.application.routes.draw do
+  scope '/ticket_gantts' do
+    post 'add_relation', to: 'ticket_gantts#add_relation'
+    put ':id/update_relation', to: 'ticket_gantts#update_relation'
+    delete ':id/delete_relation', to: 'ticket_gantts#delete_relation'
+  end
+
   resources :projects do
     resources :ticket_gantts, only: [:index] do
       collection do
         post :add_ticket
-        post :add_relation
         get :statuses
         get :trackers
         get :priorities
@@ -15,8 +19,6 @@ Rails.application.routes.draw do
       member do
         put :update_ticket
         delete :delete_ticket
-        put :update_relation
-        delete :delete_relation
       end
     end
   end

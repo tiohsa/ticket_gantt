@@ -207,8 +207,8 @@ class TicketGanttHelper {
   }
 
   // チケットの関係を追加する
-  addTicketRelation(projectId, link, successCallback, failureCallback) {
-    fetch(`/projects/${projectId}/ticket_gantts/add_relation`, {
+  addTicketRelation(link, successCallback, failureCallback) {
+    fetch(`/ticket_gantts/add_relation`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -232,8 +232,8 @@ class TicketGanttHelper {
   }
 
   // チケットの関係を更新する
-  updateTicketRelation(projectId, link, successCallback, failureCallback) {
-    fetch(`/projects/${projectId}/ticket_gantts/${link.id}/update_relation`, {
+  updateTicketRelation(link, successCallback, failureCallback) {
+    fetch(`/ticket_gantts/${link.id}/update_relation`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -257,8 +257,8 @@ class TicketGanttHelper {
   }
 
   // チケットの関係を削除する
-  deleteTicketRelation(projectId, link, successCallback, failureCallback) {
-    fetch(`/projects/${projectId}/ticket_gantts/${link.id}/delete_relation`, {
+  deleteTicketRelation(link, successCallback, failureCallback) {
+    fetch(`/ticket_gantts/${link.id}/delete_relation`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

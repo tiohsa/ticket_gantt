@@ -462,7 +462,6 @@ class GanttHelper {
         this.gantt.changeLinkId(id, data.relation.id);
       };
       this.ticketGanttHelper.addTicketRelation(
-        this.projectId,
         link,
         successCallback,
         this.eventFailureCallback,
@@ -476,7 +475,6 @@ class GanttHelper {
         // Link updated successfully
       };
       this.ticketGanttHelper.updateTicketRelation(
-        this.projectId,
         link,
         successCallback,
         this.eventFailureCallback,
@@ -490,7 +488,6 @@ class GanttHelper {
         // Link deleted successfully
       };
       this.ticketGanttHelper.deleteTicketRelation(
-        this.projectId,
         link,
         successCallback,
         this.eventFailureCallback,

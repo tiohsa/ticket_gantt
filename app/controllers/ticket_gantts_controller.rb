@@ -8,6 +8,7 @@ class TicketGanttsController < ApplicationController
 
   before_action :find_project, :authorize
   before_action :find_ticket, only: [:update_dates]
+  skip_before_action :find_project, :authorize, only: [:add_relation, :update_relation, :delete_relation]
 
   def index
     selected_month_range = params[:month_range].to_i || 3
