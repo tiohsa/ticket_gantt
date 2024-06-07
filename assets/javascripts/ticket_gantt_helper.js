@@ -128,13 +128,11 @@ class TicketGanttHelper {
           priority_id: task.priority_id,
           status_id: task.status_id,
           done_ratio: this.roundToNearestTen(task.progress * 100),
-          start_date: task.start_date.toLocaleDateString(),
-          due_date:
-            task.milestone[0] == "1"
-              ? null
-              : task.end_date.toLocaleDateString(),
+          start_date: this.startDateToLocaleDateString(task),
+          due_date: this.endDateToLocaleDateString(task),
           parent_id: task.parent,
           lock_version: task.lock_version,
+          project_id: projectId,
         },
       }),
     })
@@ -144,38 +142,51 @@ class TicketGanttHelper {
   }
 
   // チケットを更新する
-  updateTicket(projectId, ticketId, task, successCallback, failureCallback) {
-    fetch(`/projects/${projectId}/ticket_gantts/${ticketId}/update_ticket`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-CSRF-Token": document
-          .querySelector('meta[name="csrf-token"]')
-          .getAttribute("content"),
-      },
-      body: JSON.stringify({
-        issue: {
-          id: task.id,
-          subject: task.text,
-          description: task.description,
-          tracker_id: task.tracker_id,
-          priority_id: task.priority_id,
-          status_id: task.status_id,
-          done_ratio: this.roundToNearestTen(task.progress * 100),
-          start_date: task.start_date.toLocaleDateString(),
-          due_date:
-            task.milestone[0] == "1"
-              ? null
-              : task.end_date.toLocaleDateString(),
-          parent_id: task.parent,
-          lock_version: task.lock_version,
+  updateTicket(task, successCallback, failureCallback) {
+    fetch(
+      `/projects/${task.project_id}/ticket_gantts/${task.id}/update_ticket`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "X-CSRF-Token": document
+            .querySelector('meta[name="csrf-token"]')
+            .getAttribute("content"),
         },
-      }),
-    })
+        body: JSON.stringify({
+          issue: {
+            id: task.id,
+            subject: task.text,
+            description: task.description,
+            tracker_id: task.tracker_id,
+            priority_id: task.priority_id,
+            status_id: task.status_id,
+            done_ratio: this.roundToNearestTen(task.progress * 100),
+            start_date: this.startDateToLocaleDateString(task),
+            due_date: this.endDateToLocaleDateString(task),
+            parent_id: task.parent,
+            lock_version: task.lock_version,
+            project_id: task.project_id,
+          },
+        }),
+      },
+    )
       .then((response) => this.checkResponse(response))
       .then((data) => successCallback(data))
       .catch((error) => failureCallback(error));
+  }
+
+  startDateToLocaleDateString(task) {
+    return task.start_date ? task.start_date.toLocaleDateString() : null;
+  }
+
+  endDateToLocaleDateString(task) {
+    if (task.milestone && task.milestone[0] == "1") {
+      return null;
+    } else {
+      return task.end_date ? task.end_date.toLocaleDateString() : null;
+    }
   }
 
   // チケットを削除する

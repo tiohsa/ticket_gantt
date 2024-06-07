@@ -432,8 +432,6 @@ class GanttHelper {
         clearTimeout(this.debounceTimeout);
         this.debounceTimeout = setTimeout(() => {
           this.ticketGanttHelper.updateTicket(
-            this.projectId,
-            id,
             task,
             successCallback,
             this.eventFailureCallback,
@@ -445,13 +443,13 @@ class GanttHelper {
   }
 
   attachOnAfterTaskDelete() {
-    this.gantt.attachEvent("onAfterTaskDelete", (id) => {
+    this.gantt.attachEvent("onAfterTaskDelete", (id, task) => {
       const successCallback = () => {
         // Task deleted
       };
       this.ticketGanttHelper.deleteTicket(
-        this.projectId,
-        id,
+        task.project_id,
+        task.id,
         successCallback,
         this.eventFailureCallback,
       );

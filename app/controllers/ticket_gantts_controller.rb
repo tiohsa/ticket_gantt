@@ -14,19 +14,27 @@ class TicketGanttsController < ApplicationController
     start_date = params[:month] ? Date.strptime(params[:month], '%Y-%m') : Date.today.beginning_of_month
     end_date = start_date >> selected_month_range
 
-    issues = @project.issues.where("start_date >= ? AND start_date <= ? AND status_id in (?)", start_date, end_date, params[:status_ids]).order(start_date: :asc, id: :asc)
+    # 指定されたプロジェクトとそのサブプロジェクトのIDを取得
+    project_ids = @project.self_and_descendants.pluck(:id)
+
+    issues = Issue.where(project_id: project_ids)
+                  .where("start_date >= ? AND start_date <= ? AND status_id IN (?)", start_date, end_date, params[:status_ids])
+                  .order(start_date: :asc, id: :asc)
+
     # プロジェクト内のチケットのIDを取得
     issue_ids = issues.pluck(:id)
+
     # プロジェクト内のチケットに関連する関係を取得
     relations = IssueRelation.where(issue_from_id: issue_ids).or(IssueRelation.where(issue_to_id: issue_ids))
 
     respond_to do |format|
-        format.html
-        format.json { render json:{
-            data: format_issues(issues),
-            links: format_relations(relations)
+      format.html
+      format.json do
+        render json: {
+          data: format_issues(issues),
+          links: format_relations(relations)
         }
-      }
+      end
     end
   end
 
@@ -203,7 +211,8 @@ class TicketGanttsController < ApplicationController
       status_id: ticket.status_id,
       is_closed: ticket.status.is_closed,
       milestone: ticket.due_date ? ["0"] : ["1"],
-      lock_version: ticket.lock_version
+      lock_version: ticket.lock_version,
+      project_id: ticket.project_id
   }
   end
 
@@ -272,7 +281,7 @@ class TicketGanttsController < ApplicationController
   end
 
   def issue_params
-    params.require(:issue).permit(:id, :subject, :description, :done_ratio, :start_date, :due_date, :parent_id, :tracker_id, :priority_id, :status_id, :lock_version)
+    params.require(:issue).permit(:id, :subject, :description, :done_ratio, :start_date, :due_date, :parent_id, :tracker_id, :priority_id, :status_id, :lock_version, :project_id)
   end
 
   def relation_params
